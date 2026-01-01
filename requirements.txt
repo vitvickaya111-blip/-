@@ -1,0 +1,37 @@
+aiogram==3.13.1
+SQLAlchemy==2.0.29
+asyncpg==0.29.0
+betterlogging==1.0.0
+psycopg2-binary==2.9.9
+alembic==1.13.1
+redis==4.5.5
+babel==2.14.0
+apscheduler==3.10.4
+pydantic==2.9.2
+```
+
+6. Нажмите **Ctrl+S** (Cmd+S на Mac) чтобы сохранить
+
+## **Создание файла .env.example:**
+
+Повторите те же шаги, но назовите файл `.env.example` и вставьте:
+```
+BOT__TOKEN=YOUR_TOKEN_HERE
+BOT__USE_REDIS=True
+BOT__ADMIN_IDS=[YOUR_ID]
+BOT__CHANNEL_ID=YOUR_CHANNEL_ID
+
+POSTGRES__DB_USER=postgres
+POSTGRES__DB_NAME=railway
+POSTGRES__DB_PASSWORD=password
+POSTGRES__DB_HOST=postgres
+POSTGRES__DB_PORT=5432
+
+REDIS__REDIS_HOST=redis
+REDIS__REDIS_PORT=6379
+REDIS__REDIS_DB=0
+
+APP_VERSION=0.0.1
+IS_DEVELOPMENT=false
+DEBUG=False
+LOGGING__LOGGING_LEVEL=INFO
