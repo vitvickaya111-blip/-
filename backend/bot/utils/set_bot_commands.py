@@ -25,6 +25,10 @@ async def set_admin_commands(bot: Bot, admin_ids: list[int]):
                     BotCommand(command="help", description="Помощь и навигация"),
                     BotCommand(command="channel", description="Подписаться на канал"),
                     BotCommand(command="consultation", description="Записаться на консультацию"),
+                    BotCommand(command="admin", description="Админ-панель"),
+                    BotCommand(command="payments", description="Список ожидающих платежей"),
+                    BotCommand(command="approve", description="Подтвердить платеж: /approve USER_ID"),
+                    BotCommand(command="reject", description="Отклонить платеж: /reject USER_ID"),
                 ], scope=BotCommandScopeChat(chat_id=admin_id)
             )
         except exceptions.TelegramBadRequest:

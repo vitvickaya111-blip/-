@@ -31,6 +31,21 @@ CB_PAID_SCREENSHOT = "paid_screenshot"
 CB_FUNNEL_YES = "funnel_yes"
 CB_FUNNEL_NO = "funnel_no"
 
+# Shop and products
+CB_SHOP = "shop"
+CB_BUY_PAID_PDF = "buy_paid_pdf"
+CB_BUY_COMMUNITY = "buy_community"
+CB_BUY_CONSULTATION_300 = "buy_consultation_300"
+
+# Promo codes
+CB_PROMO_VIETNAM15 = "promo_vietnam15"
+CB_PROMO_DREAMER20 = "promo_dreamer20"
+CB_PROMO_READY15 = "promo_ready15"
+CB_PROMO_NONE = "promo_none"
+
+# Payment confirmation
+CB_SEND_PAYMENT_SCREENSHOT = "send_payment_screenshot"
+
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     """Main menu keyboard with 3 options"""
@@ -190,5 +205,79 @@ def get_day0_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(text="💜 Подписаться на канал", url="https://t.me/ambasadorsvobody")
+    )
+    return builder.as_markup()
+
+
+# Shop and Products keyboards
+
+def get_shop_keyboard() -> InlineKeyboardMarkup:
+    """Shop menu with all paid products"""
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="📕 Полный гайд по релокации ($50)", callback_data=CB_BUY_PAID_PDF)
+    )
+    builder.row(
+        InlineKeyboardButton(text="👭 Сообщество ($30/мес)", callback_data=CB_BUY_COMMUNITY)
+    )
+    builder.row(
+        InlineKeyboardButton(text="💎 Расширенная консультация ($300)", callback_data=CB_BUY_CONSULTATION_300)
+    )
+    builder.row(
+        InlineKeyboardButton(text="← Вернуться в меню", callback_data=CB_BACK_TO_MENU)
+    )
+    return builder.as_markup()
+
+
+def get_promo_keyboard() -> InlineKeyboardMarkup:
+    """Promo code selection keyboard"""
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="🎁 VIETNAM15 (-15%)", callback_data=CB_PROMO_VIETNAM15)
+    )
+    builder.row(
+        InlineKeyboardButton(text="✨ DREAMER20 (-20%)", callback_data=CB_PROMO_DREAMER20)
+    )
+    builder.row(
+        InlineKeyboardButton(text="🔥 READY15 (-15%)", callback_data=CB_PROMO_READY15)
+    )
+    builder.row(
+        InlineKeyboardButton(text="❌ Без промокода", callback_data=CB_PROMO_NONE)
+    )
+    return builder.as_markup()
+
+
+def get_payment_instructions_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard shown after payment instructions"""
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="✅ Я оплатила, отправить скриншот", callback_data=CB_SEND_PAYMENT_SCREENSHOT)
+    )
+    builder.row(
+        InlineKeyboardButton(text="← Вернуться назад", callback_data=CB_BACK_TO_MENU)
+    )
+    return builder.as_markup()
+
+
+def get_upsell_community_keyboard() -> InlineKeyboardMarkup:
+    """Upsell keyboard for community after quiz"""
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="👭 Да, хочу в сообщество!", callback_data=CB_BUY_COMMUNITY)
+    )
+    builder.row(
+        InlineKeyboardButton(text="Может позже", callback_data=CB_BACK_TO_MENU)
+    )
+    return builder.as_markup()
+
+
+def get_upsell_paid_pdf_keyboard() -> InlineKeyboardMarkup:
+    """Upsell keyboard for paid PDF after free guide"""
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="📕 Да, хочу полный гайд!", callback_data=CB_BUY_PAID_PDF)
+    )
+    builder.row(
+        InlineKeyboardButton(text="Спасибо, пока хватит", callback_data=CB_BACK_TO_MENU)
     )
     return builder.as_markup()

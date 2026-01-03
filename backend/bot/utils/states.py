@@ -24,3 +24,8 @@ class ConsultationForm(StatesGroup):
     waiting_for_concern = State()
     waiting_for_payment_screenshot = State()
 
+
+class PurchaseStates(StatesGroup):
+    """States for product purchase flow"""
+    waiting_for_screenshot = State()
+

@@ -90,12 +90,17 @@ CB_SUBSCRIBE_CHANNEL = "subscribe_channel"
 
 def get_start_keyboard() -> InlineKeyboardMarkup:
     """Main menu keyboard with quiz start"""
+    from keyboards.inline import CB_SHOP
+
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(text="🚀 Пройти тест", callback_data=CB_START_QUIZ)
     )
     builder.row(
         InlineKeyboardButton(text="📖 Узнать больше обо мне", callback_data=CB_ABOUT_ME)
+    )
+    builder.row(
+        InlineKeyboardButton(text="🛍️ Магазин продуктов", callback_data=CB_SHOP)
     )
     return builder.as_markup()
 

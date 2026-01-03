@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from infrastructure.database import setup as database_setup
 from infrastructure.database.repo.users import UserRepo
+from infrastructure.database.repo.payments import PaymentRepo
+from infrastructure.database.repo.promo_codes import PromoCodeRepo
 
 
 @dataclass
@@ -22,6 +24,20 @@ class RequestsRepo:
         The User repository sessions are required to manage user operations.
         """
         return UserRepo(self.sessionmaker)
+
+    @property
+    def payments(self) -> PaymentRepo:
+        """
+        The Payment repository for managing pending payments.
+        """
+        return PaymentRepo(self.sessionmaker)
+
+    @property
+    def promo_codes(self) -> PromoCodeRepo:
+        """
+        The PromoCode repository for managing promo codes.
+        """
+        return PromoCodeRepo(self.sessionmaker)
 
 
 def get_database_repo() -> RequestsRepo:

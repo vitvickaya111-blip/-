@@ -29,5 +29,11 @@ class User(Base, TableNameMixin, TimestampMixin):
     consultation_situation: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     consultation_concern: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
+    # Paid products access
+    has_paid_pdf: Mapped[bool] = mapped_column(Boolean, server_default="false")  # Платный PDF гайд
+    has_community_access: Mapped[bool] = mapped_column(Boolean, server_default="false")  # Доступ к сообществу
+    community_paid_until: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Подписка до
+    has_paid_consultation_300: Mapped[bool] = mapped_column(Boolean, server_default="false")  # Консультация $300
+
     #  joinedload - для m2o и o2o связей
     #  selectinload - для o2m и m2m связей
