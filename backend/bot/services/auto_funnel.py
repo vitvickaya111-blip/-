@@ -224,7 +224,8 @@ async def process_auto_funnel(bot: Bot, sessionmaker: async_sessionmaker):
         day2_users_stmt = select(User).where(
             User.downloaded_pdf == True,
             User.autoresponder_day == 0,
-            User.created_at <= day2_cutoff
+            User.pdf_downloaded_at.isnot(None),  # Must have download timestamp
+            User.pdf_downloaded_at <= day2_cutoff  # Fixed: use pdf_downloaded_at instead of created_at
         )
         result = await session.execute(day2_users_stmt)
         day2_users = result.scalars().all()
@@ -240,7 +241,8 @@ async def process_auto_funnel(bot: Bot, sessionmaker: async_sessionmaker):
         day5_users_stmt = select(User).where(
             User.downloaded_pdf == True,
             User.autoresponder_day == 2,
-            User.created_at <= day5_cutoff
+            User.pdf_downloaded_at.isnot(None),
+            User.pdf_downloaded_at <= day5_cutoff  # Fixed: use pdf_downloaded_at instead of created_at
         )
         result = await session.execute(day5_users_stmt)
         day5_users = result.scalars().all()
@@ -256,7 +258,8 @@ async def process_auto_funnel(bot: Bot, sessionmaker: async_sessionmaker):
         day7_users_stmt = select(User).where(
             User.downloaded_pdf == True,
             User.autoresponder_day == 5,
-            User.created_at <= day7_cutoff,
+            User.pdf_downloaded_at.isnot(None),
+            User.pdf_downloaded_at <= day7_cutoff,  # Fixed: use pdf_downloaded_at instead of created_at
             User.consultation_declined == False,
             User.consultation_paid == False
         )

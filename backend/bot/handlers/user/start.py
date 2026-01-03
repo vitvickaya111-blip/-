@@ -221,10 +221,12 @@ async def back_to_menu(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == CB_DOWNLOAD_GUIDE)
 async def download_guide_handler(callback: CallbackQuery, repo: RequestsRepo):
     """Handle PDF guide download from quiz results"""
+    from datetime import datetime
     # Mark user as downloaded PDF
     await repo.users.update(
         callback.from_user.id,
         downloaded_pdf=True,
+        pdf_downloaded_at=datetime.utcnow(),
         autoresponder_day=0
     )
 
@@ -317,10 +319,12 @@ async def paid_consultation_handler(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == CB_GET_GUIDE)
 async def get_guide_handler(callback: CallbackQuery, repo: RequestsRepo):
+    from datetime import datetime
     # Mark user as downloaded PDF and set autoresponder_day to 0
     await repo.users.update(
         callback.from_user.id,
         downloaded_pdf=True,
+        pdf_downloaded_at=datetime.utcnow(),
         autoresponder_day=0
     )
 

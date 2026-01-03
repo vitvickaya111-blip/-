@@ -555,13 +555,15 @@ async def process_question_12(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == CB_SHOW_RESULT)
 async def show_result(callback: CallbackQuery, state: FSMContext, repo: RequestsRepo):
     """Show quiz result based on score"""
+    from datetime import datetime
     data = await state.get_data()
     score = data.get('final_score', 0)
-    
-    # Mark quiz as completed
+
+    # Mark quiz as completed - user gets PDF as part of quiz result
     await repo.users.update(
         callback.from_user.id,
-        downloaded_pdf=False,  # Will be set to True when they download
+        downloaded_pdf=True,  # Fixed: was False, now True since quiz gives PDF
+        pdf_downloaded_at=datetime.utcnow(),
         autoresponder_day=0
     )
     

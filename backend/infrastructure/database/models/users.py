@@ -16,6 +16,7 @@ class User(Base, TableNameMixin, TimestampMixin):
     # Tracking fields according to instructions
     source: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # Instagram, direct link, recommendation
     downloaded_pdf: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    pdf_downloaded_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # When PDF was downloaded
     subscribed_to_channel: Mapped[bool] = mapped_column(Boolean, server_default="false")
     consultation_requested: Mapped[bool] = mapped_column(Boolean, server_default="false")
     consultation_declined: Mapped[bool] = mapped_column(Boolean, server_default="false")
