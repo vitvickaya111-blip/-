@@ -3,13 +3,13 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from filters.admin import IsAdmin
+from filters.admin import AdminFilter
 from infrastructure.database.requests import RequestsRepo
 from services.payment_processor import grant_product_access
 from utils.constants import PRODUCT_NAMES
 
 router = Router()
-router.message.filter(IsAdmin())
+router.message.filter(AdminFilter())
 
 
 @router.message(Command("approve"))
