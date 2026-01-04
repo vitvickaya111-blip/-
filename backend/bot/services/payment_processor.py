@@ -99,7 +99,7 @@ async def grant_paid_pdf_access(user_id: int, repo: RequestsRepo, bot: Bot, sett
         "→ Скидка 10% на расширенную консультацию\n"
         "→ \\$270 вместо \\$300!\n\n"
         "**2️⃣ Закрытый канал**\n"
-        "→ @ambasadorsvobody_premium\n"
+        "→ @ambasadorsvobody\\_premium\n"
         "→ Обновления, кейсы, лайфхаки\n\n"
         "**3️⃣ Google-таблица для планирования**\n"
         "→ Будет в следующем сообщении!\n\n"
