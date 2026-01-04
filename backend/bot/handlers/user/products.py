@@ -229,7 +229,7 @@ async def send_screenshot_prompt(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(PurchaseStates.waiting_for_screenshot, F.photo)
-async def process_payment_screenshot(message: Message, state: FSMContext, repo: RequestsRepo, config):
+async def process_payment_screenshot(message: Message, state: FSMContext, repo: RequestsRepo, settings):
     """Process payment screenshot and create pending payment"""
     data = await state.get_data()
     product_type = data.get("product_type")
@@ -269,7 +269,7 @@ async def process_payment_screenshot(message: Message, state: FSMContext, repo: 
     username_info = f"@{message.from_user.username}" if message.from_user.username else f"ID: {message.from_user.id}"
 
     # Notify admin
-    admin_ids = config.bot.admin_ids
+    admin_ids = settings.bot.admin_ids
     print(f"🔍 Admin IDs: {admin_ids}")
     print(f"🔍 User ID who sent screenshot: {message.from_user.id}")
 

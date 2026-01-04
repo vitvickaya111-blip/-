@@ -13,7 +13,7 @@ router.message.filter(AdminFilter())
 
 
 @router.message(Command("approve"))
-async def approve_payment_command(message: Message, repo: RequestsRepo, config):
+async def approve_payment_command(message: Message, repo: RequestsRepo, settings):
     """
     Approve pending payment: /approve USER_ID
 
@@ -51,7 +51,7 @@ async def approve_payment_command(message: Message, repo: RequestsRepo, config):
             payment.product_type,
             repo,
             message.bot,
-            config
+            settings
         )
 
         # Notify user about approval
