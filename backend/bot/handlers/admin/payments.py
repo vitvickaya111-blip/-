@@ -1,15 +1,193 @@
 """Admin payment approval handlers"""
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from filters.admin import AdminFilter
 from infrastructure.database.requests import RequestsRepo
+from keyboards.inline import CB_ADMIN_APPROVE_PAYMENT, CB_ADMIN_REJECT_PAYMENT
 from services.payment_processor import grant_product_access
 from utils.constants import PRODUCT_NAMES
 
 router = Router()
 router.message.filter(AdminFilter())
+router.callback_query.filter(AdminFilter())
+
+
+@router.message(Command("getchatid"))
+async def get_chat_id_command(message: Message):
+    """Get chat ID - use this command in the chat to get its ID"""
+    chat_id = message.chat.id
+    chat_type = message.chat.type
+    chat_title = message.chat.title if message.chat.title else "Private chat"
+
+    await message.answer(
+        f"💬 **Информация о чате:**\n\n"
+        f"Название: {chat_title}\n"
+        f"Тип: `{chat_type}`\n\n"
+        f"**Chat ID:**\n`{chat_id}`\n\n"
+        f"💡 Скопируй chat_id и добавь в настройки:\n"
+        f"`MISC__COMMUNITY_CHAT_ID={chat_id}`",
+        parse_mode="Markdown"
+    )
+
+
+@router.message(Command("getfileid"), F.document)
+async def get_file_id_command(message: Message):
+    """Get file_id of uploaded document - send document with /getfileid"""
+    file_id = message.document.file_id
+    file_name = message.document.file_name
+    file_size = message.document.file_size / 1024 / 1024  # Convert to MB
+
+    await message.answer(
+        f"📄 **Информация о файле:**\n\n"
+        f"Название: `{file_name}`\n"
+        f"Размер: {file_size:.2f} MB\n\n"
+        f"**File ID:**\n`{file_id}`\n\n"
+        f"💡 Скопируй file_id и отправь мне, я добавлю его в настройки бота!",
+        parse_mode="Markdown"
+    )
+
+
+@router.message(F.document)
+async def handle_document_upload(message: Message):
+    """Handle any document upload from admin"""
+    file_id = message.document.file_id
+    file_name = message.document.file_name
+
+    await message.answer(
+        f"📄 Получен файл: `{file_name}`\n\n"
+        f"**File ID:**\n`{file_id}`\n\n"
+        f"💡 Используй команду `/getfileid` вместе с документом для детальной информации",
+        parse_mode="Markdown"
+    )
+
+
+@router.callback_query(F.data.startswith(CB_ADMIN_APPROVE_PAYMENT))
+async def approve_payment_button(callback: CallbackQuery, repo: RequestsRepo, settings):
+    """
+    Approve pending payment via button click
+
+    Callback data format: admin_approve_payment:PAYMENT_ID
+    """
+    try:
+        # Parse payment_id from callback data
+        payment_id = int(callback.data.split(":")[1])
+
+        # Get payment
+        payment = await repo.payments.get_payment_by_id(payment_id)
+
+        if not payment:
+            await callback.answer("❌ Платеж не найден", show_alert=True)
+            return
+
+        if payment.status != "pending":
+            await callback.answer(f"❌ Платеж уже обработан (статус: {payment.status})", show_alert=True)
+            return
+
+        # Approve payment
+        await repo.payments.approve_payment(payment.id)
+
+        # Grant product access
+        await grant_product_access(
+            payment.user_id,
+            payment.product_type,
+            repo,
+            callback.bot,
+            settings
+        )
+
+        # Notify user about approval
+        product_name = PRODUCT_NAMES.get(payment.product_type, "продукт")
+
+        try:
+            await callback.bot.send_message(
+                payment.user_id,
+                f"✅ **ПЛАТЕЖ ПОДТВЕРЖДЕН!**\n\n"
+                f"Твоя покупка: {product_name}\n"
+                f"Сумма: ${payment.final_amount_usd}\n\n"
+                f"Доступ активирован! Проверь сообщения выше 👆\n\n"
+                f"Спасибо за покупку! 💜",
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            print(f"❌ Не удалось уведомить пользователя {payment.user_id}: {e}")
+
+        # Update admin message
+        await callback.message.edit_text(
+            f"✅ **ПЛАТЕЖ ПОДТВЕРЖДЕН**\n\n"
+            f"Пользователь: {payment.user_id}\n"
+            f"Продукт: {product_name}\n"
+            f"Сумма: ${payment.final_amount_usd}\n\n"
+            f"Доступ выдан!",
+            parse_mode="Markdown"
+        )
+        await callback.answer("✅ Платеж подтвержден!")
+
+    except ValueError:
+        await callback.answer("❌ Неверный формат ID платежа", show_alert=True)
+    except Exception as e:
+        await callback.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
+
+
+@router.callback_query(F.data.startswith(CB_ADMIN_REJECT_PAYMENT))
+async def reject_payment_button(callback: CallbackQuery, repo: RequestsRepo):
+    """
+    Reject pending payment via button click
+
+    Callback data format: admin_reject_payment:PAYMENT_ID
+    """
+    try:
+        # Parse payment_id from callback data
+        payment_id = int(callback.data.split(":")[1])
+
+        # Get payment
+        payment = await repo.payments.get_payment_by_id(payment_id)
+
+        if not payment:
+            await callback.answer("❌ Платеж не найден", show_alert=True)
+            return
+
+        if payment.status != "pending":
+            await callback.answer(f"❌ Платеж уже обработан (статус: {payment.status})", show_alert=True)
+            return
+
+        # Reject payment
+        await repo.payments.reject_payment(payment.id)
+
+        # Notify user about rejection
+        product_name = PRODUCT_NAMES.get(payment.product_type, "продукт")
+
+        try:
+            await callback.bot.send_message(
+                payment.user_id,
+                f"❌ **ПЛАТЕЖ НЕ ПОДТВЕРЖДЕН**\n\n"
+                f"К сожалению, платеж за \"{product_name}\" не прошел проверку.\n\n"
+                f"Возможные причины:\n"
+                f"• Неверная сумма\n"
+                f"• Платеж не найден\n"
+                f"• Технические проблемы\n\n"
+                f"💬 Пожалуйста, свяжись со мной для уточнения деталей.",
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            print(f"❌ Не удалось уведомить пользователя {payment.user_id}: {e}")
+
+        # Update admin message
+        await callback.message.edit_text(
+            f"❌ **ПЛАТЕЖ ОТКЛОНЕН**\n\n"
+            f"Пользователь: {payment.user_id}\n"
+            f"Продукт: {product_name}\n"
+            f"Сумма: ${payment.final_amount_usd}\n\n"
+            f"Пользователь уведомлен.",
+            parse_mode="Markdown"
+        )
+        await callback.answer("❌ Платеж отклонен")
+
+    except ValueError:
+        await callback.answer("❌ Неверный формат ID платежа", show_alert=True)
+    except Exception as e:
+        await callback.answer(f"❌ Ошибка: {str(e)}", show_alert=True)
 
 
 @router.message(Command("approve"))

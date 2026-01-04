@@ -136,6 +136,7 @@ async def grant_community_access(user_id: int, repo: RequestsRepo, bot: Bot, set
     community_chat_id = settings.misc.community_chat_id
 
     if community_chat_id:
+        print(f"🔍 Attempting to create invite link for community chat: {community_chat_id}")
         try:
             # Create invite link
             invite_link = await bot.create_chat_invite_link(
@@ -143,6 +144,8 @@ async def grant_community_access(user_id: int, repo: RequestsRepo, bot: Bot, set
                 member_limit=1,
                 name=f"User {user_id}"
             )
+
+            print(f"✅ Invite link created successfully: {invite_link.invite_link}")
 
             await bot.send_message(
                 user_id,
@@ -158,6 +161,11 @@ async def grant_community_access(user_id: int, repo: RequestsRepo, bot: Bot, set
                 parse_mode="Markdown"
             )
         except Exception as e:
+            # Log detailed error
+            print(f"❌ Failed to create invite link for community: {e}")
+            print(f"❌ Error type: {type(e).__name__}")
+            print(f"❌ Chat ID: {community_chat_id}")
+
             # If invite link fails, send manual instructions
             await bot.send_message(
                 user_id,
@@ -168,7 +176,8 @@ async def grant_community_access(user_id: int, repo: RequestsRepo, bot: Bot, set
                 parse_mode="Markdown"
             )
     else:
-        # TODO: Community chat not configured yet
+        # Community chat not configured
+        print(f"⚠️ Community chat ID not configured! Cannot create invite link.")
         await bot.send_message(
             user_id,
             f"👭 **ДОСТУП К СООБЩЕСТВУ АКТИВИРОВАН!**\n\n"
