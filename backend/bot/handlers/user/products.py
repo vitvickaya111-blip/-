@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery, Message
 from infrastructure.database.requests import RequestsRepo
 from keyboards.inline import (
     get_shop_keyboard, get_promo_keyboard, get_payment_instructions_keyboard,
-    get_back_to_menu_keyboard,
+    get_back_to_menu_keyboard, get_admin_payment_approval_keyboard,
     CB_SHOP, CB_BUY_PAID_PDF, CB_BUY_COMMUNITY, CB_BUY_CONSULTATION_300,
     CB_PROMO_VIETNAM15, CB_PROMO_DREAMER20, CB_PROMO_READY15, CB_PROMO_NONE,
     CB_SEND_PAYMENT_SCREENSHOT
@@ -252,7 +252,7 @@ async def process_payment_screenshot(message: Message, state: FSMContext, repo: 
     screenshot_file_id = message.photo[-1].file_id
 
     # Create pending payment
-    await repo.payments.create(
+    payment = await repo.payments.create(
         user_id=message.from_user.id,
         product_type=product_type,
         amount_usd=Decimal(str(base_price)),
@@ -272,6 +272,7 @@ async def process_payment_screenshot(message: Message, state: FSMContext, repo: 
     admin_ids = settings.bot.admin_ids
     print(f"🔍 Admin IDs: {admin_ids}")
     print(f"🔍 User ID who sent screenshot: {message.from_user.id}")
+    print(f"🔍 Payment ID: {payment.id}")
 
     if admin_ids:
         product_name = PRODUCT_NAMES[product_type]
@@ -289,17 +290,14 @@ async def process_payment_screenshot(message: Message, state: FSMContext, repo: 
                 if promo_code:
                     notification_text += f"🎁 Промокод: {promo_code} (-{discount_percent}%)\n"
 
-                notification_text += (
-                    f"\n**Действия:**\n"
-                    f"✅ Подтвердить: `/approve {message.from_user.id}`\n"
-                    f"❌ Отклонить: `/reject {message.from_user.id}`"
-                )
+                notification_text += "\n👇 Нажми кнопку для подтверждения или отклонения"
 
                 print(f"📤 Sending notification to admin {admin_id}...")
                 await message.bot.send_message(
                     admin_id,
                     notification_text,
-                    parse_mode="Markdown"
+                    parse_mode="Markdown",
+                    reply_markup=get_admin_payment_approval_keyboard(payment.id)
                 )
 
                 # Send screenshot

@@ -46,6 +46,10 @@ CB_PROMO_NONE = "promo_none"
 # Payment confirmation
 CB_SEND_PAYMENT_SCREENSHOT = "send_payment_screenshot"
 
+# Admin payment approval
+CB_ADMIN_APPROVE_PAYMENT = "admin_approve_payment"
+CB_ADMIN_REJECT_PAYMENT = "admin_reject_payment"
+
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     """Main menu keyboard with 3 options"""
@@ -279,5 +283,23 @@ def get_upsell_paid_pdf_keyboard() -> InlineKeyboardMarkup:
     )
     builder.row(
         InlineKeyboardButton(text="Спасибо, пока хватит", callback_data=CB_BACK_TO_MENU)
+    )
+    return builder.as_markup()
+
+
+def get_admin_payment_approval_keyboard(payment_id: int) -> InlineKeyboardMarkup:
+    """Admin keyboard for approving/rejecting payments"""
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(
+            text="✅ Подтвердить",
+            callback_data=f"{CB_ADMIN_APPROVE_PAYMENT}:{payment_id}"
+        )
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text="❌ Отклонить",
+            callback_data=f"{CB_ADMIN_REJECT_PAYMENT}:{payment_id}"
+        )
     )
     return builder.as_markup()

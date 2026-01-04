@@ -10,6 +10,10 @@ class PaymentRepo(BaseRepo):
     def __init__(self, sessionmaker: async_sessionmaker):
         super().__init__(sessionmaker, PendingPayment)
 
+    async def get_payment_by_id(self, payment_id: int) -> Optional[PendingPayment]:
+        """Get payment by ID"""
+        return await self.get(payment_id)
+
     async def get_pending_by_user(self, user_id: int) -> Optional[PendingPayment]:
         """Get pending payment for user"""
         async with self.sessionmaker() as session:

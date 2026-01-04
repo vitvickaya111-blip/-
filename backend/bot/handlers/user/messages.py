@@ -16,7 +16,7 @@ async def handle_user_message(
         message: Message,
         state: FSMContext,
         repo: RequestsRepo,
-        config
+        settings
 ):
     """Handle direct messages from users (not in any state)"""
 
@@ -50,7 +50,7 @@ async def handle_user_message(
     await message.answer(response_text, reply_markup=get_back_to_menu_keyboard())
 
     # Notify admin about new message
-    admin_ids = config.bot.admin_ids
+    admin_ids = settings.bot.admin_ids
     if admin_ids:
         from aiogram import Bot
         bot: Bot = message.bot

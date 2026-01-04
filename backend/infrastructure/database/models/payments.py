@@ -8,12 +8,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base, TimestampMixin, TableNameMixin, int_pk
 
 
-class PendingPayment(Base, TableNameMixin, TimestampMixin):
+class PendingPayment(Base, TimestampMixin):
     """
     Pending payments awaiting admin approval.
 
     Status flow: pending -> approved/rejected
     """
+    __tablename__ = "pending_payments"
+
     id: Mapped[int_pk] = mapped_column(BIGINT, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BIGINT)
 
@@ -33,10 +35,12 @@ class PendingPayment(Base, TableNameMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String, server_default="pending")  # 'pending', 'approved', 'rejected'
 
 
-class PromoCode(Base, TableNameMixin, TimestampMixin):
+class PromoCode(Base, TimestampMixin):
     """
     Promotional codes for discounts.
     """
+    __tablename__ = "promo_codes"
+
     id: Mapped[int_pk] = mapped_column(BIGINT, primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String, unique=True)
     discount_percent: Mapped[int] = mapped_column(Integer)
