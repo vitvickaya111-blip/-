@@ -67,7 +67,7 @@ async def grant_paid_pdf_access(user_id: int, repo: RequestsRepo, bot: Bot, sett
 
     # Send PDF from local file
     # Bot runs from /app/bot/, PDF is in /app/data/
-    pdf_path = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "data", "relocation_guide.pdf")
+    pdf_path = os.path.join(os.path.dirname(os.getcwd()), "data", "relocation_guide.pdf")
 
     try:
         pdf_file = FSInputFile(pdf_path, filename="ot_mechty_do_posadochnogo.pdf")
