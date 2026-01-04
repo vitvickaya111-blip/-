@@ -70,19 +70,79 @@ async def buy_consultation_300_handler(callback: CallbackQuery, state: FSMContex
     )
 
 
-async def start_purchase(callback: CallbackQuery, state: FSMContext, product_type: str, description: str):
+async def start_purchase(callback: CallbackQuery, state: FSMContext, product_type: str, description: str, auto_promo: str = None):
     """
     Common function to start purchase flow.
 
-    Flow: Product description -> Promo code selection -> Payment instructions -> Screenshot
+    Flow: Product description -> Payment instructions -> Screenshot
+
+    Args:
+        auto_promo: Automatically apply promo code (DREAMER20, VIETNAM15, etc.)
     """
     # Save product type to state
     await state.update_data(product_type=product_type)
 
-    # Show product description
-    text = f"{description}\n\n💳 **Готова оформить покупку?**\n\nВыбери промокод, если есть:"
+    # Auto-apply best promo code if not specified
+    if not auto_promo:
+        auto_promo = "DREAMER20"  # Always use best discount by default
 
-    await callback.message.edit_text(text, reply_markup=get_promo_keyboard(), parse_mode="Markdown")
+    # Apply promo code automatically
+    await apply_promo_with_code(callback, state, auto_promo)
+
+
+async def apply_promo_with_code(callback: CallbackQuery, state: FSMContext, promo_code: str):
+    """Apply promo code automatically and show payment instructions"""
+    data = await state.get_data()
+    product_type = data.get("product_type")
+
+    if not product_type:
+        await callback.answer("❌ Ошибка: продукт не выбран", show_alert=True)
+        return
+
+    # Calculate price with promo
+    final_price, discount_percent = calculate_price(product_type, promo_code)
+
+    # Save to state
+    await state.update_data(
+        promo_code=promo_code,
+        final_price=float(final_price),
+        discount_percent=discount_percent
+    )
+
+    # Show payment instructions
+    product_name = PRODUCT_NAMES[product_type]
+    base_price = calculate_price(product_type)[0]
+
+    price_text = (
+        f"~~${base_price}~~ → **${final_price}** "
+        f"✨ Скидка {discount_percent}%!"
+    )
+
+    payment_text = f"""💳 **ОПЛАТА: {product_name}**
+
+Твоя цена: {price_text}
+
+**Реквизиты для оплаты:**
+
+💳 Карта: `{SBERBANK_CARD}`
+👤 Получатель: {SBERBANK_RECIPIENT}
+
+**Как оплатить:**
+
+1️⃣ Переведи ${final_price} на карту выше
+2️⃣ Сделай скриншот подтверждения оплаты
+3️⃣ Нажми кнопку ниже и отправь скриншот
+
+⏰ Проверка платежа займет до 24 часов.
+После подтверждения получишь доступ к продукту!
+
+❓ Вопросы? Пиши мне в личку!"""
+
+    await callback.message.edit_text(
+        payment_text,
+        reply_markup=get_payment_instructions_keyboard(),
+        parse_mode="Markdown"
+    )
     await callback.answer()
 
 
