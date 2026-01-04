@@ -105,7 +105,7 @@ async def approve_payment_button(callback: CallbackQuery, repo: RequestsRepo, se
                 payment.user_id,
                 f"✅ **ПЛАТЕЖ ПОДТВЕРЖДЕН!**\n\n"
                 f"Твоя покупка: {product_name}\n"
-                f"Сумма: ${payment.final_amount_usd}\n\n"
+                f"Сумма: \\${payment.final_amount_usd}\n\n"
                 f"Доступ активирован! Проверь сообщения выше 👆\n\n"
                 f"Спасибо за покупку! 💜",
                 parse_mode="Markdown"
@@ -118,7 +118,7 @@ async def approve_payment_button(callback: CallbackQuery, repo: RequestsRepo, se
             f"✅ **ПЛАТЕЖ ПОДТВЕРЖДЕН**\n\n"
             f"Пользователь: {payment.user_id}\n"
             f"Продукт: {product_name}\n"
-            f"Сумма: ${payment.final_amount_usd}\n\n"
+            f"Сумма: \\${payment.final_amount_usd}\n\n"
             f"Доступ выдан!",
             parse_mode="Markdown"
         )
@@ -178,7 +178,7 @@ async def reject_payment_button(callback: CallbackQuery, repo: RequestsRepo):
             f"❌ **ПЛАТЕЖ ОТКЛОНЕН**\n\n"
             f"Пользователь: {payment.user_id}\n"
             f"Продукт: {product_name}\n"
-            f"Сумма: ${payment.final_amount_usd}\n\n"
+            f"Сумма: \\${payment.final_amount_usd}\n\n"
             f"Пользователь уведомлен.",
             parse_mode="Markdown"
         )
@@ -240,7 +240,7 @@ async def approve_payment_command(message: Message, repo: RequestsRepo, settings
                 user_id,
                 f"✅ **ПЛАТЕЖ ПОДТВЕРЖДЕН!**\n\n"
                 f"Твоя покупка: {product_name}\n"
-                f"Сумма: ${payment.final_amount_usd}\n\n"
+                f"Сумма: \\${payment.final_amount_usd}\n\n"
                 f"Доступ активирован! Проверь сообщения выше 👆\n\n"
                 f"Спасибо за покупку! 💜",
                 parse_mode="Markdown"
@@ -253,7 +253,7 @@ async def approve_payment_command(message: Message, repo: RequestsRepo, settings
             f"✅ **ПЛАТЕЖ ПОДТВЕРЖДЕН**\n\n"
             f"Пользователь: {user_id}\n"
             f"Продукт: {product_name}\n"
-            f"Сумма: ${payment.final_amount_usd}\n\n"
+            f"Сумма: \\${payment.final_amount_usd}\n\n"
             f"Доступ выдан!",
             parse_mode="Markdown"
         )
@@ -326,7 +326,7 @@ async def reject_payment_command(message: Message, repo: RequestsRepo):
             f"❌ **ПЛАТЕЖ ОТКЛОНЕН**\n\n"
             f"Пользователь: {user_id}\n"
             f"Продукт: {product_name}\n"
-            f"Сумма: ${payment.final_amount_usd}\n\n"
+            f"Сумма: \\${payment.final_amount_usd}\n\n"
             f"Пользователь уведомлен.",
             parse_mode="Markdown"
         )
@@ -365,7 +365,7 @@ async def list_pending_payments(message: Message, repo: RequestsRepo):
             text += (
                 f"👤 User ID: `{payment.user_id}`\n"
                 f"🛍️ Продукт: {product_name}\n"
-                f"💰 Сумма: ${payment.final_amount_usd}"
+                f"💰 Сумма: \\${payment.final_amount_usd}"
             )
 
             if payment.promo_code:

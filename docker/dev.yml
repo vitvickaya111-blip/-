@@ -14,6 +14,7 @@ services:
       - .env.dev
     volumes:
       - ../backend/infrastructure/migrations/versions:/app/infrastructure/migrations/versions
+      - ../data:/app/data
     restart: unless-stopped
     depends_on:
       - api

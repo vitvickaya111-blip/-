@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from aiogram import Bot
-from aiogram.types import URLInputFile
+from aiogram.types import FSInputFile
 
 from infrastructure.database.requests import RequestsRepo
 from utils.constants import (
@@ -60,66 +60,55 @@ async def grant_product_access(
 
 async def grant_paid_pdf_access(user_id: int, repo: RequestsRepo, bot: Bot, settings) -> None:
     """Grant access to paid PDF guide"""
+    import os
+
     # Update user
     await repo.users.update(user_id, has_paid_pdf=True)
 
-    # Send PDF
-    paid_pdf_url = settings.misc.paid_pdf_url
+    # Send PDF from local file
+    # Bot runs from /app/bot/, PDF is in /app/data/
+    pdf_path = os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "data", "relocation_guide.pdf")
 
-    if paid_pdf_url:
-        try:
-            pdf_file = URLInputFile(paid_pdf_url, filename="ot_mechty_do_posadochnogo.pdf")
-            await bot.send_document(
-                user_id,
-                pdf_file,
-                caption=(
-                    "📖 **ВОТ ТВОЙ ГАЙД \"ОТ МЕЧТЫ ДО ПОСАДОЧНОГО\"!**\n\n"
-                    "30 страниц конкретики для твоей релокации! ✈️"
-                ),
-                parse_mode="Markdown"
-            )
-        except Exception:
-            # If PDF sending fails, send link
-            await bot.send_message(
-                user_id,
-                f"📖 **ВОТ ТВОЙ ГАЙД \"ОТ МЕЧТЫ ДО ПОСАДОЧНОГО\"!**\n\n"
-                f"📥 Скачать: {paid_pdf_url}\n\n"
-                f"30 страниц конкретики для твоей релокации! ✈️",
-                parse_mode="Markdown"
-            )
-
-        # Send bonuses message
-        await bot.send_message(
+    try:
+        pdf_file = FSInputFile(pdf_path, filename="ot_mechty_do_posadochnogo.pdf")
+        await bot.send_document(
             user_id,
-            "🎁 **ТВОИ БОНУСЫ К ГАЙДУ:**\n\n"
-            "**1️⃣ Промокод GUIDE10**\n"
-            "→ Скидка 10% на расширенную консультацию\n"
-            "→ $270 вместо $300!\n\n"
-            "**2️⃣ Закрытый канал**\n"
-            "→ @ambasadorsvobody_premium\n"
-            "→ Обновления, кейсы, лайфхаки\n\n"
-            "**3️⃣ Google-таблица для планирования**\n"
-            "→ Будет в следующем сообщении!\n\n"
-            "**4️⃣ Бесплатные обновления**\n"
-            "→ Все новые версии гайда — бесплатно!\n\n"
-            "**Изучай, планируй, действуй!** 💜\n\n"
-            "Вопросы? Пиши мне прямо сюда! 💬",
+            pdf_file,
+            caption=(
+                "📖 **ВОТ ТВОЙ ГАЙД \"ОТ МЕЧТЫ ДО ПОСАДОЧНОГО\"!**\n\n"
+                "30 страниц конкретики для твоей релокации! ✈️"
+            ),
             parse_mode="Markdown"
         )
-    else:
-        # TODO: PDF URL not configured yet
+    except Exception as e:
+        # If PDF sending fails, notify user
+        print(f"❌ Ошибка отправки PDF пользователю {user_id}: {e}")
         await bot.send_message(
             user_id,
-            "🎉 **ОПЛАТА ПОДТВЕРЖДЕНА!**\n\n"
-            "📖 Гайд \"От мечты до посадочного\" будет отправлен в ближайшее время.\n\n"
-            "🎁 **ТВОИ БОНУСЫ:**\n"
-            "1️⃣ Промокод GUIDE10 на консультацию (-10%)\n"
-            "2️⃣ Доступ к закрытому каналу @ambasadorsvobody_premium\n"
-            "3️⃣ Google-таблица для планирования\n"
-            "4️⃣ Бесплатные обновления гайда\n\n"
-            "Спасибо за покупку! 💜",
+            "📖 **ВОТ ТВОЙ ГАЙД \"ОТ МЕЧТЫ ДО ПОСАДОЧНОГО\"!**\n\n"
+            "⚠️ Файл будет отправлен в ближайшее время.\n\n"
+            "30 страниц конкретики для твоей релокации! ✈️",
             parse_mode="Markdown"
         )
+
+    # Send bonuses message
+    await bot.send_message(
+        user_id,
+        "🎁 **ТВОИ БОНУСЫ К ГАЙДУ:**\n\n"
+        "**1️⃣ Промокод GUIDE10**\n"
+        "→ Скидка 10% на расширенную консультацию\n"
+        "→ \\$270 вместо \\$300!\n\n"
+        "**2️⃣ Закрытый канал**\n"
+        "→ @ambasadorsvobody_premium\n"
+        "→ Обновления, кейсы, лайфхаки\n\n"
+        "**3️⃣ Google-таблица для планирования**\n"
+        "→ Будет в следующем сообщении!\n\n"
+        "**4️⃣ Бесплатные обновления**\n"
+        "→ Все новые версии гайда — бесплатно!\n\n"
+        "**Изучай, планируй, действуй!** 💜\n\n"
+        "Вопросы? Пиши мне прямо сюда! 💬",
+        parse_mode="Markdown"
+    )
 
 
 async def grant_community_access(user_id: int, repo: RequestsRepo, bot: Bot, settings) -> None:
