@@ -69,6 +69,15 @@ async def grant_paid_pdf_access(user_id: int, repo: RequestsRepo, bot: Bot, sett
     # Bot runs from /app/bot/, PDF is in /app/data/
     pdf_path = os.path.join(os.path.dirname(os.getcwd()), "data", "relocation_guide.pdf")
 
+    # Debug logging
+    print(f"🔍 Current working directory: {os.getcwd()}")
+    print(f"🔍 PDF path: {pdf_path}")
+    print(f"🔍 PDF exists: {os.path.exists(pdf_path)}")
+    if not os.path.exists(pdf_path):
+        print(f"🔍 Trying absolute path: /app/data/relocation_guide.pdf")
+        pdf_path = "/app/data/relocation_guide.pdf"
+        print(f"🔍 Absolute path exists: {os.path.exists(pdf_path)}")
+
     try:
         pdf_file = FSInputFile(pdf_path, filename="ot_mechty_do_posadochnogo.pdf")
         await bot.send_document(
