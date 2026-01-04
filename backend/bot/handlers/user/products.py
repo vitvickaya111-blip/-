@@ -210,6 +210,9 @@ async def process_payment_screenshot(message: Message, state: FSMContext, repo: 
 
     # Notify admin
     admin_ids = config.bot.admin_ids
+    print(f"🔍 Admin IDs: {admin_ids}")
+    print(f"🔍 User ID who sent screenshot: {message.from_user.id}")
+
     if admin_ids:
         product_name = PRODUCT_NAMES[product_type]
 
@@ -232,6 +235,7 @@ async def process_payment_screenshot(message: Message, state: FSMContext, repo: 
                     f"❌ Отклонить: `/reject {message.from_user.id}`"
                 )
 
+                print(f"📤 Sending notification to admin {admin_id}...")
                 await message.bot.send_message(
                     admin_id,
                     notification_text,
@@ -239,14 +243,18 @@ async def process_payment_screenshot(message: Message, state: FSMContext, repo: 
                 )
 
                 # Send screenshot
+                print(f"📸 Sending screenshot to admin {admin_id}...")
                 await message.bot.send_photo(
                     admin_id,
                     screenshot_file_id,
                     caption="💳 Скриншот оплаты"
                 )
+                print(f"✅ Successfully sent notification to admin {admin_id}")
             except Exception as e:
                 # Log error but don't fail user flow
                 print(f"❌ Ошибка отправки уведомления админу {admin_id}: {e}")
+    else:
+        print(f"⚠️ No admin IDs configured!")
 
     # Send confirmation to user
     await message.answer(

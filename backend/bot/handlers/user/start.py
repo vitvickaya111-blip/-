@@ -148,6 +148,16 @@ CONSULTATION_TEXT = """💬 КОНСУЛЬТАЦИЯ СО МНОЙ
 Это НЕ продажа курсов. Это реальная помощь от женщины, которая прошла через это."""
 
 
+@router.message(Command("myid"))
+async def get_my_id(message: Message):
+    """Command to get user's Telegram ID"""
+    await message.answer(
+        f"🆔 **Твой Telegram ID:** `{message.from_user.id}`\n\n"
+        f"Этот ID нужен для настройки админ-доступа в боте.",
+        parse_mode="Markdown"
+    )
+
+
 @router.message(CommandStart())
 async def user_start(message: Message, state: FSMContext, repo: RequestsRepo):
     await state.clear()
