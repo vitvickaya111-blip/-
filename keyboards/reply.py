@@ -128,3 +128,26 @@ def cancel_keyboard():
         resize_keyboard=True
     )
     return keyboard
+
+
+def diagnostics_start_keyboard():
+    """Клавиатура начала диагностики"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="✅ Пройти диагностику")],
+            [KeyboardButton(text="⏭ Пропустить")]
+        ],
+        resize_keyboard=True
+    )
+    return keyboard
+
+
+def skip_keyboard():
+    """Кнопка пропуска во время диагностики"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="⏭ Пропустить")]
+        ],
+        resize_keyboard=True
+    )
+    return keyboard

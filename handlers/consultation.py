@@ -11,7 +11,7 @@ from texts.messages import (
     CONSULTATION_SUCCESS
 )
 from utils.states import ConsultationStates
-from database.db import save_consultation
+from database.db import save_consultation, mark_consultation_booked
 from config import ADMIN_ID
 
 router = Router()
@@ -36,7 +36,7 @@ async def start_consultation(message: Message, state: FSMContext):
     )
 
 
-@router.message(ConsultationStates.name)
+@router.message(ConsultationStates.name, F.text)
 async def process_name(message: Message, state: FSMContext):
     """Обработка имени"""
     if message.text == "❌ Отменить":
@@ -52,7 +52,7 @@ async def process_name(message: Message, state: FSMContext):
     )
 
 
-@router.message(ConsultationStates.business)
+@router.message(ConsultationStates.business, F.text)
 async def process_business(message: Message, state: FSMContext):
     """Обработка бизнеса"""
     if message.text == "❌ Отменить":
@@ -68,7 +68,7 @@ async def process_business(message: Message, state: FSMContext):
     )
 
 
-@router.message(ConsultationStates.task)
+@router.message(ConsultationStates.task, F.text)
 async def process_task(message: Message, state: FSMContext):
     """Обработка задачи"""
     if message.text == "❌ Отменить":
@@ -80,21 +80,26 @@ async def process_task(message: Message, state: FSMContext):
 
     data = await state.get_data()
     user = message.from_user
+    contact = f"@{user.username}" if user.username else str(user.id)
 
-    await save_consultation(
-        user_id=user.id,
-        name=data['name'],
-        business=data['business'],
-        task=data['task'],
-        contact=f"@{user.username}" if user.username else str(user.id)
-    )
+    try:
+        await save_consultation(
+            user_id=user.id,
+            name=data['name'],
+            business=data['business'],
+            task=data['task'],
+            contact=contact
+        )
+        await mark_consultation_booked(user.id)
+    except Exception as e:
+        print(f"Ошибка сохранения в БД: {e}")
 
     admin_message = (
         f"🔔 НОВАЯ ЗАЯВКА НА КОНСУЛЬТАЦИЮ\n\n"
         f"👤 Имя: {data['name']}\n"
         f"💼 Бизнес: {data['business']}\n"
         f"🎯 Задача: {data['task']}\n"
-        f"📱 Контакт: @{user.username if user.username else user.id}\n\n"
+        f"📱 Контакт: {contact}\n\n"
         f"ID пользователя: {user.id}"
     )
 
@@ -108,6 +113,14 @@ async def process_task(message: Message, state: FSMContext):
         CONSULTATION_SUCCESS,
         reply_markup=main_menu()
     )
+
+
+@router.message(ConsultationStates.name)
+@router.message(ConsultationStates.business)
+@router.message(ConsultationStates.task)
+async def consultation_non_text(message: Message):
+    """Отклонить нетекстовые сообщения в FSM"""
+    await message.answer("Пожалуйста, отправьте текстовое сообщение.")
 
 
 @router.message(F.text == "💬 Написать в личку")

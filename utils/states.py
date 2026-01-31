@@ -16,3 +16,10 @@ class BriefBotStates(StatesGroup):
     payment = State()
     deadline = State()
     budget = State()
+
+
+class DiagnosticsStates(StatesGroup):
+    """Состояния для диагностики (воронка)"""
+    business = State()
+    automation = State()
+    budget = State()

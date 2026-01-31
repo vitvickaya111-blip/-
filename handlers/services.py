@@ -24,7 +24,7 @@ from texts.messages import (
     BRIEF_SUCCESS
 )
 from utils.states import BriefBotStates
-from database.db import save_brief
+from database.db import save_brief, mark_brief_submitted
 from config import ADMIN_ID
 
 router = Router()
@@ -91,12 +91,12 @@ async def start_brief(message: Message, state: FSMContext):
     )
 
 
-@router.message(BriefBotStates.business)
+@router.message(BriefBotStates.business, F.text)
 async def brief_business(message: Message, state: FSMContext):
     """Бриф: бизнес"""
     if message.text == "❌ Отменить":
         await state.clear()
-        await message.answer("Отменено.", reply_markup=main_menu())
+        await message.answer("Отменено.", reply_markup=telegram_bots_menu())
         return
 
     await state.update_data(business=message.text)
@@ -104,12 +104,12 @@ async def brief_business(message: Message, state: FSMContext):
     await message.answer(BRIEF_ASK_TASK, reply_markup=cancel_keyboard())
 
 
-@router.message(BriefBotStates.task)
+@router.message(BriefBotStates.task, F.text)
 async def brief_task(message: Message, state: FSMContext):
     """Бриф: задача"""
     if message.text == "❌ Отменить":
         await state.clear()
-        await message.answer("Отменено.", reply_markup=main_menu())
+        await message.answer("Отменено.", reply_markup=telegram_bots_menu())
         return
 
     await state.update_data(task=message.text)
@@ -117,12 +117,12 @@ async def brief_task(message: Message, state: FSMContext):
     await message.answer(BRIEF_ASK_FUNCTIONAL, reply_markup=cancel_keyboard())
 
 
-@router.message(BriefBotStates.functional)
+@router.message(BriefBotStates.functional, F.text)
 async def brief_functional(message: Message, state: FSMContext):
     """Бриф: функционал"""
     if message.text == "❌ Отменить":
         await state.clear()
-        await message.answer("Отменено.", reply_markup=main_menu())
+        await message.answer("Отменено.", reply_markup=telegram_bots_menu())
         return
 
     await state.update_data(functional=message.text)
@@ -130,12 +130,12 @@ async def brief_functional(message: Message, state: FSMContext):
     await message.answer(BRIEF_ASK_PAYMENT, reply_markup=cancel_keyboard())
 
 
-@router.message(BriefBotStates.payment)
+@router.message(BriefBotStates.payment, F.text)
 async def brief_payment(message: Message, state: FSMContext):
     """Бриф: оплата"""
     if message.text == "❌ Отменить":
         await state.clear()
-        await message.answer("Отменено.", reply_markup=main_menu())
+        await message.answer("Отменено.", reply_markup=telegram_bots_menu())
         return
 
     await state.update_data(payment=message.text)
@@ -143,12 +143,12 @@ async def brief_payment(message: Message, state: FSMContext):
     await message.answer(BRIEF_ASK_DEADLINE, reply_markup=cancel_keyboard())
 
 
-@router.message(BriefBotStates.deadline)
+@router.message(BriefBotStates.deadline, F.text)
 async def brief_deadline(message: Message, state: FSMContext):
     """Бриф: дедлайн"""
     if message.text == "❌ Отменить":
         await state.clear()
-        await message.answer("Отменено.", reply_markup=main_menu())
+        await message.answer("Отменено.", reply_markup=telegram_bots_menu())
         return
 
     await state.update_data(deadline=message.text)
@@ -156,19 +156,19 @@ async def brief_deadline(message: Message, state: FSMContext):
     await message.answer(BRIEF_ASK_BUDGET, reply_markup=cancel_keyboard())
 
 
-@router.message(BriefBotStates.budget)
+@router.message(BriefBotStates.budget, F.text)
 async def brief_budget(message: Message, state: FSMContext):
     """Бриф: бюджет — финальный шаг"""
     if message.text == "❌ Отменить":
         await state.clear()
-        await message.answer("Отменено.", reply_markup=main_menu())
+        await message.answer("Отменено.", reply_markup=telegram_bots_menu())
         return
 
     await state.update_data(budget=message.text)
     data = await state.get_data()
     user = message.from_user
+    contact = f"@{user.username}" if user.username else str(user.id)
 
-    # Сохранить в БД
     brief_text = (
         f"Бизнес: {data['business']}\n"
         f"Задача: {data['task']}\n"
@@ -177,12 +177,16 @@ async def brief_budget(message: Message, state: FSMContext):
         f"Дедлайн: {data['deadline']}\n"
         f"Бюджет: {data['budget']}"
     )
-    await save_brief(user_id=user.id, brief_type="telegram_bot", data=brief_text)
 
-    # Отправить админу
+    try:
+        await save_brief(user_id=user.id, brief_type="telegram_bot", data=brief_text)
+        await mark_brief_submitted(user.id)
+    except Exception as e:
+        print(f"Ошибка сохранения брифа: {e}")
+
     admin_message = (
         f"📋 НОВЫЙ БРИФ НА БОТА\n\n"
-        f"👤 От: {user.first_name or ''} (@{user.username or user.id})\n\n"
+        f"👤 От: {user.first_name or ''} ({contact})\n\n"
         f"💼 Бизнес: {data['business']}\n"
         f"🎯 Задача: {data['task']}\n"
         f"⚙️ Функционал: {data['functional']}\n"
@@ -199,6 +203,17 @@ async def brief_budget(message: Message, state: FSMContext):
 
     await state.clear()
     await message.answer(BRIEF_SUCCESS, reply_markup=main_menu())
+
+
+@router.message(BriefBotStates.business)
+@router.message(BriefBotStates.task)
+@router.message(BriefBotStates.functional)
+@router.message(BriefBotStates.payment)
+@router.message(BriefBotStates.deadline)
+@router.message(BriefBotStates.budget)
+async def brief_non_text(message: Message):
+    """Отклонить нетекстовые сообщения в FSM"""
+    await message.answer("Пожалуйста, отправьте текстовое сообщение.")
 
 
 @router.message(F.text == "💬 Обсудить проект")
@@ -220,10 +235,9 @@ async def discuss_project(message: Message):
 ]))
 async def other_services(message: Message):
     """Остальные услуги (заглушка)"""
-    service_name = message.text.split()[1] if len(message.text.split()) > 1 else "эта услуга"
     await message.answer(
         f"Раздел '{message.text}' в разработке.\n\n"
-        f"Хотите обсудить {service_name.lower()}?\n"
+        f"Хотите обсудить проект?\n"
         f"Напишите мне: @nastya\n\n"
         f"Или оставьте заявку через 'Бесплатная консультация'.",
         reply_markup=services_menu()
