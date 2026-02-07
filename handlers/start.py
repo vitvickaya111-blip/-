@@ -6,7 +6,8 @@ from aiogram.fsm.context import FSMContext
 from keyboards.reply import main_menu
 from keyboards.inline import services_menu, education_menu
 from texts.messages import get_main_menu, SERVICES_INTRO, EDUCATION_INTRO, CONSULTATION_INTRO
-from database.db import add_user, get_user, update_user_stage
+from database.db import add_user, get_user, update_user_stage, get_stats
+from config import ADMIN_ID
 
 router = Router()
 
@@ -30,6 +31,37 @@ async def cmd_start(message: Message, state: FSMContext):
     )
 
     await message.answer(welcome, reply_markup=main_menu())
+
+
+@router.message(Command("stats"))
+async def cmd_stats(message: Message):
+    """Статистика бота (только для админа)"""
+    if message.from_user.id != ADMIN_ID:
+        await message.answer("⛔ Эта команда только для админа")
+        return
+
+    stats = await get_stats()
+
+    # Форматируем последних пользователей
+    recent = ""
+    for u in stats['recent_users']:
+        username = f"@{u[0]}" if u[0] else "без username"
+        recent += f"  • {u[1]} ({username})\n"
+
+    text = f"""📊 СТАТИСТИКА БОТА
+
+👥 Всего пользователей: {stats['total_users']}
+🆕 Сегодня новых: {stats['today_users']}
+
+💬 Заявок на консультацию: {stats['total_consultations']}
+📝 Брифов: {stats['total_briefs']}
+
+━━━━━━━━━━━━━━━━━━━━
+
+🕐 Последние пользователи:
+{recent}"""
+
+    await message.answer(text)
 
 
 @router.message(F.text == "◀️ В меню")

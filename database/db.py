@@ -133,3 +133,39 @@ async def save_calculation(user_id: int, hours: float, cost: float,
             VALUES (?, ?, ?, ?, ?)
         ''', (user_id, hours, cost, monthly_loss, yearly_loss))
         await db.commit()
+
+
+async def get_stats():
+    """Получить статистику бота"""
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        # Всего пользователей
+        async with db.execute('SELECT COUNT(*) FROM users') as cursor:
+            total_users = (await cursor.fetchone())[0]
+
+        # Сегодня новых
+        async with db.execute(
+            "SELECT COUNT(*) FROM users WHERE DATE(created_at) = DATE('now')"
+        ) as cursor:
+            today_users = (await cursor.fetchone())[0]
+
+        # Заявок на консультацию
+        async with db.execute('SELECT COUNT(*) FROM consultations') as cursor:
+            total_consultations = (await cursor.fetchone())[0]
+
+        # Брифов
+        async with db.execute('SELECT COUNT(*) FROM briefs') as cursor:
+            total_briefs = (await cursor.fetchone())[0]
+
+        # Последние 5 пользователей
+        async with db.execute(
+            'SELECT username, first_name, created_at FROM users ORDER BY created_at DESC LIMIT 5'
+        ) as cursor:
+            recent_users = await cursor.fetchall()
+
+        return {
+            'total_users': total_users,
+            'today_users': today_users,
+            'total_consultations': total_consultations,
+            'total_briefs': total_briefs,
+            'recent_users': recent_users
+        }
