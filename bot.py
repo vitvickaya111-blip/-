@@ -8,7 +8,7 @@ from aiogram.types import BotCommand, Message, CallbackQuery, TelegramObject
 from config import BOT_TOKEN
 from database.db import init_db
 
-from handlers import start, calculator, services, education, cases, consultation, about
+from handlers import start, calculator, services, education, cases, consultation, about, checklist, quiz
 
 
 class DebugMiddleware(BaseMiddleware):
@@ -92,10 +92,12 @@ async def main():
     # Порядок важен! FSM роутеры должны быть в правильном порядке
     dp.include_router(start.router)
     dp.include_router(calculator.router)
+    dp.include_router(quiz.router)          # FSM quiz
     dp.include_router(services.router)      # FSM brief
     dp.include_router(consultation.router)  # FSM consultation
     dp.include_router(education.router)
     dp.include_router(cases.router)
+    dp.include_router(checklist.router)
     dp.include_router(about.router)
 
     dp.startup.register(on_startup)
