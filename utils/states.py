@@ -8,8 +8,8 @@ class ConsultationStates(StatesGroup):
     task = State()
 
 
-class BriefBotStates(StatesGroup):
-    """Состояния для брифа на бота"""
+class BriefStates(StatesGroup):
+    """Состояния для брифа"""
     business = State()
     task = State()
     functional = State()
@@ -18,8 +18,7 @@ class BriefBotStates(StatesGroup):
     budget = State()
 
 
-class DiagnosticsStates(StatesGroup):
-    """Состояния для диагностики (воронка)"""
-    business = State()
-    automation = State()
-    budget = State()
+class CalculatorStates(StatesGroup):
+    """Состояния для калькулятора"""
+    hours_per_day = State()
+    cost_per_hour = State()

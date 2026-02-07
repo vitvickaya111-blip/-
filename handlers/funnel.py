@@ -4,7 +4,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from keyboards.reply import main_menu, skip_keyboard
+from keyboards.reply import main_menu, skip_keyboard, after_diagnostics_keyboard
 from texts.messages import (
     MAIN_MENU,
     DIAGNOSTICS_ASK_BUSINESS,
@@ -154,8 +154,7 @@ async def process_budget(message: Message, state: FSMContext):
         print(f"Ошибка отправки админу: {e}")
 
     await state.clear()
-    await message.answer(rec_text)
-    await message.answer(DIAGNOSTICS_DONE + "\n\n" + MAIN_MENU, reply_markup=main_menu())
+    await message.answer(rec_text, reply_markup=after_diagnostics_keyboard())
 
 
 @router.message(DiagnosticsStates.business)

@@ -13,4 +13,4 @@ except ValueError:
     raise ValueError("ADMIN_ID должен быть числом!")
 
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database", "bot.db")
-INSTAGRAM_URL = "https://instagram.com/podruga_iz_brazilii"
+INSTAGRAM_URL = "https://instagram.com/anastasiia_vibecoding_ai"

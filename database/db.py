@@ -10,12 +10,10 @@ async def init_db():
                 user_id INTEGER PRIMARY KEY,
                 username TEXT,
                 first_name TEXT,
-                is_new INTEGER DEFAULT 1,
-                funnel_active INTEGER DEFAULT 0,
-                consultation_booked INTEGER DEFAULT 0,
-                brief_submitted INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                last_interaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                total_messages INTEGER DEFAULT 0,
+                stage TEXT DEFAULT 'new'
             )
         ''')
 
@@ -46,170 +44,61 @@ async def init_db():
         ''')
 
         await db.execute('''
-            CREATE TABLE IF NOT EXISTS diagnostics (
+            CREATE TABLE IF NOT EXISTS calculations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
-                business TEXT,
-                automation TEXT,
-                budget TEXT,
-                recommendation TEXT,
+                hours_per_day REAL,
+                cost_per_hour REAL,
+                monthly_loss REAL,
+                yearly_loss REAL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id)
             )
         ''')
 
-        await db.execute('''
-            CREATE TABLE IF NOT EXISTS funnel_messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                step INTEGER,
-                scheduled_at TIMESTAMP,
-                sent_at TIMESTAMP,
-                status TEXT DEFAULT 'pending',
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
-            )
-        ''')
-
-        # Миграция: добавить новые колонки если их нет
-        try:
-            await db.execute('ALTER TABLE users ADD COLUMN is_new INTEGER DEFAULT 1')
-        except Exception:
-            pass
-        try:
-            await db.execute('ALTER TABLE users ADD COLUMN funnel_active INTEGER DEFAULT 0')
-        except Exception:
-            pass
-        try:
-            await db.execute('ALTER TABLE users ADD COLUMN consultation_booked INTEGER DEFAULT 0')
-        except Exception:
-            pass
-        try:
-            await db.execute('ALTER TABLE users ADD COLUMN brief_submitted INTEGER DEFAULT 0')
-        except Exception:
-            pass
-
         await db.commit()
 
 
 async def add_user(user_id: int, username: str, first_name: str):
-    """Добавить или обновить пользователя"""
+    """Добавить/обновить пользователя"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute('''
-            INSERT INTO users (user_id, username, first_name)
-            VALUES (?, ?, ?)
+            INSERT INTO users (user_id, username, first_name, total_messages)
+            VALUES (?, ?, ?, 1)
             ON CONFLICT(user_id) DO UPDATE SET
                 username = excluded.username,
                 first_name = excluded.first_name,
-                last_interaction = CURRENT_TIMESTAMP
+                last_interaction = CURRENT_TIMESTAMP,
+                total_messages = total_messages + 1
         ''', (user_id, username, first_name))
         await db.commit()
 
 
-async def is_user_new(user_id: int) -> bool:
-    """Проверить, новый ли пользователь"""
+async def get_user(user_id: int):
+    """Получить пользователя"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        cursor = await db.execute(
-            'SELECT is_new FROM users WHERE user_id = ?', (user_id,)
-        )
-        row = await cursor.fetchone()
-        if row is None:
-            return True
-        return bool(row[0])
-
-
-async def mark_user_not_new(user_id: int):
-    """Пометить пользователя как не нового"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            'UPDATE users SET is_new = 0 WHERE user_id = ?', (user_id,)
-        )
-        await db.commit()
-
-
-async def save_diagnostics(user_id: int, business: str, automation: str, budget: str, recommendation: str):
-    """Сохранить результаты диагностики"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute('''
-            INSERT INTO diagnostics (user_id, business, automation, budget, recommendation)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (user_id, business, automation, budget, recommendation))
-        await db.commit()
-
-
-async def activate_funnel(user_id: int):
-    """Активировать воронку для пользователя"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            'UPDATE users SET funnel_active = 1 WHERE user_id = ?', (user_id,)
-        )
-        await db.commit()
-
-
-async def deactivate_funnel(user_id: int):
-    """Деактивировать воронку для пользователя"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            'UPDATE users SET funnel_active = 0 WHERE user_id = ?', (user_id,)
-        )
-        await db.execute(
-            "UPDATE funnel_messages SET status = 'cancelled' WHERE user_id = ? AND status = 'pending'",
+        async with db.execute(
+            'SELECT user_id, username, first_name, total_messages, stage FROM users WHERE user_id = ?',
             (user_id,)
-        )
-        await db.commit()
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return {
+                    'user_id': row[0],
+                    'username': row[1],
+                    'first_name': row[2],
+                    'total_messages': row[3] or 0,
+                    'stage': row[4] or 'new'
+                }
+            return None
 
 
-async def mark_consultation_booked(user_id: int):
-    """Пометить, что пользователь записался на консультацию"""
+async def update_user_stage(user_id: int, stage: str):
+    """Обновить этап пользователя"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute(
-            'UPDATE users SET consultation_booked = 1 WHERE user_id = ?', (user_id,)
-        )
-        await db.commit()
-    await deactivate_funnel(user_id)
-
-
-async def mark_brief_submitted(user_id: int):
-    """Пометить, что пользователь отправил бриф"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            'UPDATE users SET brief_submitted = 1 WHERE user_id = ?', (user_id,)
-        )
-        await db.commit()
-    await deactivate_funnel(user_id)
-
-
-async def schedule_funnel_message(user_id: int, step: int, scheduled_at: str):
-    """Запланировать сообщение воронки"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute('''
-            INSERT INTO funnel_messages (user_id, step, scheduled_at)
-            VALUES (?, ?, ?)
-        ''', (user_id, step, scheduled_at))
-        await db.commit()
-
-
-async def get_pending_funnel_messages():
-    """Получить все ожидающие сообщения воронки, время которых наступило"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute('''
-            SELECT fm.id, fm.user_id, fm.step, fm.scheduled_at
-            FROM funnel_messages fm
-            JOIN users u ON fm.user_id = u.user_id
-            WHERE fm.status = 'pending'
-              AND fm.scheduled_at <= datetime('now')
-              AND u.funnel_active = 1
-        ''')
-        rows = await cursor.fetchall()
-        return [dict(row) for row in rows]
-
-
-async def mark_funnel_message_sent(message_id: int):
-    """Пометить сообщение воронки как отправленное"""
-    async with aiosqlite.connect(DATABASE_PATH) as db:
-        await db.execute(
-            "UPDATE funnel_messages SET status = 'sent', sent_at = datetime('now') WHERE id = ?",
-            (message_id,)
+            'UPDATE users SET stage = ? WHERE user_id = ?',
+            (stage, user_id)
         )
         await db.commit()
 
@@ -231,4 +120,16 @@ async def save_brief(user_id: int, brief_type: str, data: str):
             INSERT INTO briefs (user_id, brief_type, data)
             VALUES (?, ?, ?)
         ''', (user_id, brief_type, data))
+        await db.commit()
+
+
+async def save_calculation(user_id: int, hours: float, cost: float,
+                          monthly_loss: float, yearly_loss: float):
+    """Сохранить расчёт калькулятора"""
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute('''
+            INSERT INTO calculations
+            (user_id, hours_per_day, cost_per_hour, monthly_loss, yearly_loss)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, hours, cost, monthly_loss, yearly_loss))
         await db.commit()
