@@ -177,4 +177,4 @@ volumes
 # macOS system files
 .DS_Store
 
-dev_site.conf
+dev_site.confdatabase/bot.db
