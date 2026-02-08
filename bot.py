@@ -5,10 +5,13 @@ from aiogram import Bot, Dispatcher, BaseMiddleware
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand, Message, CallbackQuery, TelegramObject
 
-from config import BOT_TOKEN
-from database.db import init_db
+from datetime import datetime, timedelta
 
-from handlers import start, calculator, services, education, cases, consultation, about, checklist, quiz
+from config import BOT_TOKEN
+from database.db import init_db, get_users_without_funnel, schedule_funnel_message
+from services.funnel_scheduler import setup_scheduler
+
+from handlers import start, calculator, services, education, cases, consultation, about, checklist, quiz, broadcast
 
 
 class DebugMiddleware(BaseMiddleware):
@@ -52,6 +55,25 @@ async def on_startup(bot: Bot):
     await init_db()
     logger.info("База данных инициализирована")
 
+    # Запланировать прогрев для существующих пользователей без воронки
+    users_without_funnel = await get_users_without_funnel()
+    if users_without_funnel:
+        now = datetime.utcnow()
+        steps = [
+            (1, now + timedelta(hours=1)),
+            (2, now + timedelta(days=1)),
+            (3, now + timedelta(days=3)),
+            (4, now + timedelta(days=7)),
+        ]
+        for user_id in users_without_funnel:
+            for step, scheduled_at in steps:
+                await schedule_funnel_message(
+                    user_id=user_id,
+                    step=step,
+                    scheduled_at=scheduled_at.strftime('%Y-%m-%d %H:%M:%S')
+                )
+        logger.info(f"Прогрев запланирован для {len(users_without_funnel)} существующих пользователей")
+
     await set_commands(bot)
     logger.info("Команды установлены")
 
@@ -85,11 +107,15 @@ async def main():
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
 
+    # Планировщик автоматических рассылок
+    scheduler = setup_scheduler(bot)
+
     # Debug middleware
     dp.message.middleware(DebugMiddleware())
     dp.callback_query.middleware(DebugMiddleware())
 
     # Порядок важен! FSM роутеры должны быть в правильном порядке
+    dp.include_router(broadcast.router)
     dp.include_router(start.router)
     dp.include_router(calculator.router)
     dp.include_router(quiz.router)          # FSM quiz
@@ -100,8 +126,18 @@ async def main():
     dp.include_router(checklist.router)
     dp.include_router(about.router)
 
-    dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
+    async def on_startup_with_scheduler(bot: Bot):
+        await on_startup(bot)
+        scheduler.start()
+        logger.info("Планировщик рассылок запущен")
+
+    async def on_shutdown_with_scheduler(bot: Bot):
+        scheduler.shutdown()
+        logger.info("Планировщик рассылок остановлен")
+        await on_shutdown(bot)
+
+    dp.startup.register(on_startup_with_scheduler)
+    dp.shutdown.register(on_shutdown_with_scheduler)
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)

@@ -22,3 +22,8 @@ class CalculatorStates(StatesGroup):
     """Состояния для калькулятора"""
     hours_per_day = State()
     cost_per_hour = State()
+
+
+class BroadcastStates(StatesGroup):
+    """Состояния для рассылки"""
+    waiting_for_message = State()

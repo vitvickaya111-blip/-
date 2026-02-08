@@ -1,5 +1,5 @@
 # Инициализация пакета handlers
-from . import start, services, education, cases, consultation, calculator, about, checklist, quiz
+from . import start, services, education, cases, consultation, calculator, about, checklist, quiz, broadcast
 
 __all__ = [
     'start',
@@ -10,5 +10,6 @@ __all__ = [
     'calculator',
     'about',
     'checklist',
-    'quiz'
+    'quiz',
+    'broadcast',
 ]

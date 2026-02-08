@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
@@ -6,7 +8,10 @@ from aiogram.fsm.context import FSMContext
 from keyboards.reply import main_menu
 from keyboards.inline import services_menu, education_menu
 from texts.messages import get_main_menu, SERVICES_INTRO, EDUCATION_INTRO, CONSULTATION_INTRO
-from database.db import add_user, get_user, update_user_stage, get_stats
+from database.db import (
+    add_user, get_user, update_user_stage, get_stats,
+    has_funnel_messages, schedule_funnel_message, reset_reactivation,
+)
 from config import ADMIN_ID
 
 router = Router()
@@ -24,6 +29,26 @@ async def cmd_start(message: Message, state: FSMContext):
     )
 
     user = await get_user(message.from_user.id)
+
+    # Планируем прогревающую цепочку для новых пользователей
+    user_id = message.from_user.id
+    if not await has_funnel_messages(user_id):
+        now = datetime.utcnow()
+        steps = [
+            (1, now + timedelta(hours=1)),
+            (2, now + timedelta(days=1)),
+            (3, now + timedelta(days=3)),
+            (4, now + timedelta(days=7)),
+        ]
+        for step, scheduled_at in steps:
+            await schedule_funnel_message(
+                user_id=user_id,
+                step=step,
+                scheduled_at=scheduled_at.strftime('%Y-%m-%d %H:%M:%S')
+            )
+
+    # Сбросить флаг реактивации при повторном визите
+    await reset_reactivation(user_id)
 
     welcome = get_main_menu(
         first_name=user['first_name'] if user else message.from_user.first_name,
